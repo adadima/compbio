@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 
@@ -27,10 +28,19 @@ class Indication(Feature):
 
 class Target(Feature):
     uniprot = models.CharField(max_length=50)
+    pdb = ArrayField(models.CharField(max_length=50), default=list())
     protein_pocket_sequence = models.CharField(max_length=10000, null=True)
 
     def __str__(self):
         return f"Protein Target - uniprot: {self.uniprot}"
+
+
+class PocketMotif(Feature):
+    motif_id = models.IntegerField()
+    proteins = ArrayField(models.CharField(max_length=50))
+
+    def __str__(self):
+        return f"Protein pocket motif - id: {self.motif_id}"
 
 
 class ADR(Feature):

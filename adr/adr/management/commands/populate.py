@@ -22,6 +22,102 @@ from .substructure_utils import get_fingerprint
 class Command(BaseCommand):
     help = "Populate the database with ADR-drug and indication-drug edges"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--targets',
+            action='store_true',
+            help='Populate the database with drug-target edges'
+        )
+
+        parser.add_argument(
+            '--refined',
+            action='store_true',
+            help="Use the refined pdb set."
+        )
+
+        parser.add_argument(
+            '--general',
+            action='store_true',
+            help="Use the general pdb set."
+        )
+
+        parser.add_argument(
+            '--adrs',
+            action='store_true',
+            help='Populate the database with drug-adr edges'
+        )
+
+        parser.add_argument(
+            '--inds',
+            action='store_true',
+            help='Populate the database with drug-indication edges'
+        )
+
+        parser.add_argument(
+            '--substruct',
+            action='store_true',
+            help='Populate the database with drug-substructure edges'
+        )
+
+        parser.add_argument(
+            '--test',
+            action='store_true',
+            help='Runs a test.'
+        )
+
+        parser.add_argument(
+            '--pdb',
+            action='store_true',
+            help='Runs a test.'
+        )
+
+    def handle(self, *args, **options):
+
+        if options['targets']:
+
+            if options['refined']:
+                self.add_targets(INDEX_NAME_REFINED, INDEX_DATA_REFINED)
+            elif options['general']:
+                self.add_targets(INDEX_NAME_GENERAL, INDEX_DATA_GENERAL, 'general-set')
+            else:
+                print("If you are trying to add targets you need to specify"
+                      "what PDBBind set to use - general or refined.")
+
+        if options['adrs']:
+            self.add_adr()
+
+        if options['inds']:
+            self.add_indication()
+
+        if options['substruct']:
+            self.add_substructure()
+
+        if options['pdb']:
+            if options['refined']:
+                self.add_pdbs(INDEX_NAME_REFINED)
+            elif options['general']:
+                self.add_pdbs(INDEX_NAME_GENERAL)
+            else:
+                print("If you are trying to set the targets' pdbs you need to specify"
+                      "what PDBBind set to use - general or refined.")
+
+        if options['test']:
+            print("Arguments working")
+
+        print("Executed command")
+
+    def add_pdbs(self, index_filename):
+        uniprot_pdb = get_uniprot_pdb_map(index_filename)
+        total = Target.objects.all().count()
+        count = 0
+        for target in Target.objects.all():
+            if target.uniprot not in uniprot_pdb:
+                continue
+            target.pdb = list(uniprot_pdb[target.uniprot])[:3]
+            target.save()
+            count += 1
+            print(f"{count} / {total} done")
+
     def add_indication(self):
         cid_to_ind = cid_to_indication()
         total = sum(len(cid_to_ind[c]) for c in cid_to_ind)
@@ -108,77 +204,6 @@ class Command(BaseCommand):
                 edge.save()
             count += 1
             print(f"{count} / {total} done")
-
-    def add_arguments(self, parser):
-        parser.add_argument(
-            '--targets',
-            action='store_true',
-            help='Populate the database with drug-target edges'
-        )
-
-        parser.add_argument(
-            '--refined',
-            action='store_true',
-            help="Use the refined pdb set."
-        )
-
-        parser.add_argument(
-            '--general',
-            action='store_true',
-            help="Use the general pdb set."
-        )
-
-        parser.add_argument(
-            '--adrs',
-            action='store_true',
-            help='Populate the database with drug-adr edges'
-        )
-
-        parser.add_argument(
-            '--inds',
-            action='store_true',
-            help='Populate the database with drug-indication edges'
-        )
-
-        parser.add_argument(
-            '--substruct',
-            action='store_true',
-            help='Populate the database with drug-substructure edges'
-        )
-
-        parser.add_argument(
-            '--test',
-            action='store_true',
-            help='Runs a test.'
-        )
-
-    def handle(self, *args, **options):
-        if options['targets']:
-            if options['refined']:
-                self.add_targets(INDEX_NAME_REFINED, INDEX_DATA_REFINED)
-            elif options['general']:
-                self.add_targets(INDEX_NAME_GENERAL, INDEX_DATA_GENERAL, 'general-set')
-            else:
-                print("If you are trying to add targets you need to specify"
-                      "what PDBBind set to use - general or refined.")
-            print(Drug.objects.all().count())
-            print(Target.objects.all().count())
-        if options['adrs']:
-            self.add_adr()
-            print(Drug.objects.all().count())
-            print(ADR.objects.all().count())
-        if options['inds']:
-            self.add_indication()
-            print(Drug.objects.all().count())
-            print(Indication.objects.all().count())
-        if options['substruct']:
-            self.add_substructure()
-            print(Drug.objects.all().count())
-            print(SubStructure.objects.all().count())
-        if options['test']:
-            print("Arguments working")
-        print("Executed command")
-        print(os.getcwd())
 
 
 if __name__ == "__main__":
