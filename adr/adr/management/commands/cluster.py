@@ -24,15 +24,15 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--populate',
+            '--replace',
             action='store_true',
             help='Replace the Target entries in the database with the computed clusters'
         )
 
     def handle(self, *args, **options):
-        clusters = self.cluster()
-        if options['populate']:
-            self.add_pockets(clusters)
+        self.cluster()
+        if options['replace']:
+            self.add_pockets()
 
     def cluster(self):
         print("Computing clusters ... ")
@@ -50,9 +50,7 @@ class Command(BaseCommand):
             print(f"Cluster {id}: {pdbs}")
             id += 1
 
-        return clusters
-
-    def add_pockets(self, clusters):
+    def add_pockets(self):
         for edge in Edge.objects.all():
 
             if edge.edge_type != "DRUG_TARGET":
@@ -60,10 +58,6 @@ class Command(BaseCommand):
             cluster_id = self.target_to_cluster[edge.feature]
             motif = PocketMotif(motif_id=cluster_id, proteins=self.cluster_to_target[cluster_id])
             motif.save()
-            new_edge = Edge(edge_type="DRUG_MOTIF",
-                            drug=edge.drug,
-                            feature=motif,
-                            weight_value=edge.weight_value,
-                            weight_units=edge.weight_units,
-                            weight_measure=edge.weight_measure)
-            new_edge.save()
+            edge.feature = motif
+            edge.edge_type = "DRUG_MOTIF"
+            edge.save()
