@@ -68,7 +68,13 @@ class Command(BaseCommand):
         parser.add_argument(
             '--pdb',
             action='store_true',
-            help='Runs a test.'
+            help='Add pdb ids to the target entries.'
+        )
+
+        parser.add_argument(
+            '--augmentdrugs',
+            action='store_true',
+            help='Augment drug entries with their outgoing edges as foreign keys.'
         )
 
     def handle(self, *args, **options):
@@ -101,10 +107,16 @@ class Command(BaseCommand):
                 print("If you are trying to set the targets' pdbs you need to specify"
                       "what PDBBind set to use - general or refined.")
 
+        if options['augmentdrugs']:
+            self.populate_drug_foreigns()
+
         if options['test']:
-            print("Arguments working")
+            self.test()
 
         print("Executed command")
+
+    def test(self):
+        print(Drug.objects.all().count())
 
     def add_pdbs(self, index_filename):
         uniprot_pdb = get_uniprot_pdb_map(index_filename)
@@ -155,17 +167,13 @@ class Command(BaseCommand):
         ligand_to_cid = {cid_to_ligand[ligand]: ligand for ligand in cid_to_ligand}
         pdb_to_uniprot = get_pdb_uniprot_map(name_file)
         affinities = get_binding_affinity(data_file)
-        # print(ligand_to_cid.keys())
-        # print({key[1] for key in affinities})
         total = len(affinities)
         count = 0
         for key in affinities:
             pdb, ligandId = key
             if ligandId not in ligand_to_cid:
-                # print("FAIL LIGAND")
                 continue
             if pdb not in pdb_to_uniprot:
-                # print("FAIL PDB")
                 continue
             self.add_drug_target(ligandId, pdb, affinities, ligand_to_cid, pdb_to_uniprot, set)
             count += 1

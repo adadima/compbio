@@ -5,22 +5,17 @@ from django.db import models
 
 
 class Feature(models.Model):
-    pass
-
-
-class Drug(models.Model):
-    drugbank_id = models.CharField(max_length=50, null=True)
-    cid = models.CharField(max_length=50, null=True)
-    smiles = models.CharField(max_length=10000, null=True)
-    status = models.CharField(max_length=50, null=True)
-
-    def __str__(self):
-        return f"Drug - cid: {self.cid}"
+    def __init__(self, identifier):
+        super(Feature, self).__init__()
+        self.id = identifier
 
 
 class Indication(Feature):
     indication_id = models.CharField(max_length=50)
     indication_name = models.CharField(max_length=10000, null=True)
+
+    def __init__(self):
+        super(Indication, self).__init__(self.indication_id)
 
     def __str__(self):
         return f"Indication - id: {self.indication_id}, name: {self.indication_name}"
@@ -31,6 +26,9 @@ class Target(Feature):
     pdb = ArrayField(models.CharField(max_length=50), default=list())
     protein_pocket_sequence = models.CharField(max_length=10000, null=True)
 
+    def __init__(self):
+        super(Target, self).__init__(self.uniprot)
+
     def __str__(self):
         return f"Protein Target - uniprot: {self.uniprot}"
 
@@ -38,6 +36,9 @@ class Target(Feature):
 class PocketMotif(Feature):
     motif_id = models.IntegerField()
     proteins = ArrayField(models.CharField(max_length=50))
+
+    def __init__(self):
+        super(PocketMotif, self).__init__(str(self.motif_id))
 
     def __str__(self):
         return f"Protein pocket motif - id: {self.motif_id}"
@@ -47,6 +48,9 @@ class ADR(Feature):
     adr_id = models.CharField(max_length=50)
     adr_description = models.CharField(max_length=10000, null=True)
 
+    def __init__(self):
+        super(ADR, self).__init__(self.adr_id)
+
     def __str__(self):
         return f"ADR - id: {self.adr_id}, descr: {self.adr_description}"
 
@@ -54,8 +58,21 @@ class ADR(Feature):
 class SubStructure(Feature):
     struct_id = models.CharField(max_length=50)
 
+    def __init__(self):
+        super(SubStructure, self).__init__(self.struct_id)
+
     def __str__(self):
         return f"SubStructure - id: {self.struct_id}"
+
+
+class Drug(models.Model):
+    drugbank_id = models.CharField(max_length=50, null=True)
+    cid = models.CharField(max_length=50, null=True)
+    smiles = models.CharField(max_length=10000, null=True)
+    status = models.CharField(max_length=50, null=True)
+
+    def __str__(self):
+        return f"Drug - cid: {self.cid}"
 
 
 class Edge(models.Model):
